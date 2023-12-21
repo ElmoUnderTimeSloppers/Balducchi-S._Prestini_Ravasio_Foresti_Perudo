@@ -10,7 +10,7 @@ public class Game {
     static LinkedList<Integer> results = new LinkedList<>();
     public static void main(String[] args) {
         Scanner s = new Scanner(System.in);
-        int nDice;
+        int nDice = -1;
         int nSearch;
         System.out.println("Inserisci il numero da cercare (per i jolly scrivere J)");
         try{
@@ -26,13 +26,22 @@ public class Game {
         playerList.add(new Player("Jacopo", 5));
         playerList.add(new Player("Andrea", 5));
         rollAll();
-        printAll();
-        if(count(nSearch)<nDice){
+        //printAll();
+        int index = new Random().nextInt(1,playerList.size());
+        while (true) {
+            if(nDice != -1)
+            {
+
+            }
+        }
+
+
+        /*if(count(nSearch)<nDice){
             System.out.println("Hai perso");
         }
         else {
             System.out.println("Hai vinto");
-        }
+        }*/
     }
 
     private static void rollAll(){
@@ -64,4 +73,6 @@ public class Game {
         }
         return c;
     }
+
+
 }
