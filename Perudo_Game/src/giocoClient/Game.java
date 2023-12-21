@@ -1,6 +1,7 @@
 package giocoClient;
 
 import java.util.LinkedList;
+import java.util.Random;
 import java.util.Scanner;
 
 public class Game {
@@ -51,7 +52,7 @@ public class Game {
     private static int count(int n){
         int c = 0;
         for(int r : results){
-            if(r == n){
+            if(r == n || r == 1){
                 c++;
             }
         }
