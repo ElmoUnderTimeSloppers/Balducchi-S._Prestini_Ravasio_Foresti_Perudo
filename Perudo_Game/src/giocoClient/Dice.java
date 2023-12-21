@@ -10,6 +10,6 @@ public class Dice {
     }
 
     public int Throw() {
-        return new Random().nextInt();
+        return new Random().nextInt(1, max+1);
     }
 }
