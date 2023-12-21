@@ -1,5 +1,6 @@
 package giocoClient;
 
+import java.io.IOException;
 import java.util.LinkedList;
 import java.util.Random;
 import java.util.Scanner;
@@ -11,8 +12,13 @@ public class Game {
         Scanner s = new Scanner(System.in);
         int nDice;
         int nSearch;
-        System.out.println("Inserisci il numero da cercare");
-        nSearch = Integer.parseInt(s.nextLine());
+        System.out.println("Inserisci il numero da cercare (per i jolly scrivere J)");
+        try{
+            nSearch = Integer.parseInt(s.nextLine());
+        }
+        catch (Exception e){
+            nSearch = 1;
+        }
         System.out.println("Inserisci il numero di dadi");
         nDice = Integer.parseInt(s.nextLine());
         playerList.add(new Player("eda27", 5));
