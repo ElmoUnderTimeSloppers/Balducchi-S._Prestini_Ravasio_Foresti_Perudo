@@ -1,4 +1,6 @@
-package giocoClient;
+package giocoClientServer.server;
+
+import giocoClient.Dice;
 
 import java.util.LinkedList;
 
@@ -6,7 +8,7 @@ public class Results {
     public LinkedList<Integer> results = new LinkedList<>();
     private Dice d;
 
-    public Results(int max){
+    Results(int max){
         d = new Dice(max);
     }
     public void Roll(int nDice){

@@ -26,7 +26,7 @@ public class Client {
             String message;
             while(client.isConnected()){
                 message = s.nextLine();
-                out.writeUTF(username + ": " + message);
+                out.writeUTF(message);
             }
         }
         catch (IOException e){
