@@ -132,7 +132,7 @@ public class Connection implements Runnable{
             try {
                 disconnect();
             } catch (IOException ex) {
-                System.out.println("Dio cane");
+                ex.printStackTrace();
             }
         }
     }
