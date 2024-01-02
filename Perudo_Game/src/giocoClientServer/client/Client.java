@@ -10,18 +10,15 @@ public class Client {
     private Socket client;
     private DataOutputStream out;
     private DataInputStream in;
-    private String username;
 
-    public Client(Socket client, String username) throws IOException {
+    public Client(Socket client) throws IOException {
         this.client = client;
         out = new DataOutputStream(this.client.getOutputStream());
         in = new DataInputStream(this.client.getInputStream());
-        this.username = username;
     }
 
     public void sendMessage(){
         try{
-            out.writeUTF(username);
             Scanner s = new Scanner(System.in);
             String message;
             while(client.isConnected()){
@@ -53,10 +50,7 @@ public class Client {
     }
 
     public static void main(String[] args) throws IOException {
-        Scanner s = new Scanner(System.in);
-        System.out.println("Inserisci username");
-        String un = s.nextLine();
-        Client c = new Client(new Socket("localhost", 1234), un);
+        Client c = new Client(new Socket("localhost", 1234));
         c.receiveMessage();
         c.sendMessage();
     }

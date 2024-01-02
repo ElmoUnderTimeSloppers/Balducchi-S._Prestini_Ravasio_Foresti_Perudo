@@ -8,22 +8,18 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class Player {
-    public Socket client;
-    public DataOutputStream out;
-    public DataInputStream in;
     public String username;
+    public Connection myConnection;
     private boolean isConnected;
     public int numberOfDice;
     private Game gameConnectedTo;
     public Results results;
-    Player(String username, int nDice, int maxDiceValue, Game gameConnectedTo, Socket client) throws IOException {
+    Player(String username, int nDice, int maxDiceValue, Game gameConnectedTo, Connection myConnection) throws IOException {
         results = new Results(maxDiceValue);
         this.username = username;
         this.numberOfDice = nDice;
         this.gameConnectedTo = gameConnectedTo;
-        this.client = client;
-        out = new DataOutputStream(this.client.getOutputStream());
-        in = new DataInputStream(this.client.getInputStream());
+        this.myConnection = myConnection;
     }
 
     public void Throw(){

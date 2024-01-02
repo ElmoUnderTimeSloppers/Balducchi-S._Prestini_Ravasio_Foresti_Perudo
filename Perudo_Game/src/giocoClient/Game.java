@@ -34,14 +34,6 @@ public class Game {
 
             }
         }
-
-
-        /*if(count(nSearch)<nDice){
-            System.out.println("Hai perso");
-        }
-        else {
-            System.out.println("Hai vinto");
-        }*/
     }
 
     private static void rollAll(){
