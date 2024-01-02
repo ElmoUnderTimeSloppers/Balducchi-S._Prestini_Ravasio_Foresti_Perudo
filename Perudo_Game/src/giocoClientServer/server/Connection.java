@@ -60,18 +60,19 @@ public class Connection implements Runnable{
                     else{
                         do{
                             c = true;
-                            sendToClient("Insert the game ID");
+                            printPublicGame();
+                            sendToClient("Insert the game ID (if it's a private lobby it won't be in the list above)");
                             message = receiveFromClient();      // reiceve the lobby ID from the client
                             for(Game g : gameList){
                                 c = false;
-                                if(g.ID.equals(message)){   // if a lobby with that ID exist then it connect to it
+                                if(g.ID.equals(message) && !g.hasStarted && g.playerList.size()<g.maxPlayer){   // if a lobby with that ID exist then it connect to it
                                     g.addPlayer(new Player(username, g.startingDice, g.maxDiceValue, g, this));
                                     gameConnectedTo = message;
                                     c = true;
                                 }
                             }
                             if(!c){
-                                sendToClient("A game with that ID doesn't exist");
+                                sendToClient("A game with that ID doesn't exist, it has already started or reached the max player");
                             }
                         } while(!c);
                     }
@@ -80,6 +81,8 @@ public class Connection implements Runnable{
                 else if(message.equals("2")){
                     c = true;
                     // We have 4 customizable option for the lobby
+                    boolean isPublic = true;// IF THE LOBBY IS PUBLIC OR PRIVATE
+                    String decision = "";
                     int maxPlayer = -1;     // MAXIMUM AMOUNT OF PLAYER (MIN 2, MAX 6)
                     int minPlayer = -1;     // MINIMUM AMOUNT OF PLAYER TO START (MIN 2, MAX maxPlayer)
                     int maxDiceValue = -1;  // MAXIMUM VALUE OF THE DICE (MIN 2, MAX 20)
@@ -87,6 +90,21 @@ public class Connection implements Runnable{
                     do{
                         try{
                             c = true;
+                            // PUBLIC OR PRIVATE
+                            if(!decision.equals("1") || !decision.equals("2")){
+                                sendToClient("Do you want the lobby to be private or public\n" + "1. Public\n" + "2. Private");
+                                decision = receiveFromClient();
+                                if(decision.equals("1")){
+                                    isPublic = true;
+                                }
+                                else if(decision.equals("2")){
+                                    isPublic = false;
+                                }
+                                else{
+                                    sendToClient("Error repeat");
+                                    c = false;
+                                }
+                            }
                             // MAX PLAYER
                             if(maxPlayer>6 || maxPlayer<2){
                                 sendToClient("Insert the game maximum number of player (max = 6)");
@@ -128,7 +146,7 @@ public class Connection implements Runnable{
                             c = false;
                         }
                     } while(!c);
-                    gameList.add(new Game(maxPlayer, minPlayer, maxDiceValue, startingDice, this)); // Create a new game with this option
+                    gameList.add(new Game(maxPlayer, minPlayer, maxDiceValue, startingDice, this, isPublic)); // Create a new game with this option
                 }
                 else{
                     c = false;
@@ -203,5 +221,17 @@ public class Connection implements Runnable{
         } catch (Exception e){
             e.printStackTrace();
         }
+    }
+
+    public void printPublicGame() throws IOException {
+        int i = 1;
+        sendToClient("Public lobbies:");
+        for(Game g : gameList){
+            if(g.isPublic && !g.hasStarted){
+                sendToClient(i + ". " + g.ID + " (" + g.playerList.size() + "/" + g.maxPlayer + ")");
+                i++;
+            }
+        }
+        sendToClient("--------------");
     }
 }

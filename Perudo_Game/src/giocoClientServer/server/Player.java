@@ -9,6 +9,7 @@ import java.net.Socket;
 
 public class Player {
     public String username;
+    public boolean isEliminated = false;
     public Connection myConnection;
     private boolean isConnected;
     public int numberOfDice;
