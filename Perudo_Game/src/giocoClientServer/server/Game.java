@@ -43,17 +43,26 @@ public class Game {
                             hasStarted = true;
                         }
                     }while(!hasStarted);
-                    reStart();
-                    numberOfRestingPlayer = playerList.size();
-                    do{
-                        startNewTurn();
-                    } while(numberOfRestingPlayer > 1);
                 } catch(Exception e){
                     try {
                         playerList.getFirst().myConnection.disconnect();
                     } catch (IOException ex) {
                         throw new RuntimeException(ex);
                     }
+                }
+                try {
+                    reStart();
+                    numberOfRestingPlayer = playerList.size();
+                    do{
+                        try{
+                            startNewTurn();
+                        }
+                        catch (IOException e){
+                            System.out.println("MMMH");
+                        }
+                    } while(numberOfRestingPlayer > 1 && playerList.size() > 1);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
             }
         }).start();
@@ -72,7 +81,12 @@ public class Game {
     }
     private void broadcast(String message) throws IOException {
         for(Player p : playerList){
-            p.myConnection.sendToClient(message);
+            try{
+                p.myConnection.sendToClient(message);
+            } catch (IOException e){
+                removePlayer(p.username);
+            }
+
         }
     }
     private void rollAll(){
@@ -110,11 +124,46 @@ public class Game {
         return c;
     }
 
+    private boolean dudo(int diceValue, int numberOfDice){
+        if(count(diceValue) < numberOfDice) return false;
+        else return true;
+    }
+
+    private Player getPrevious(){
+        int i = index;
+        do{
+            if(i == 0) i = playerList.size()-1;
+            else i--;
+        } while(playerList.get(i).isEliminated);
+        return playerList.get(i);
+    }
+
+    private void reStart() throws IOException {
+        rollAll();
+        addResults();
+        printDicePrivate();
+    }
+
+    private void incrementIndex(){
+        do{
+            if(index == playerList.size()-1) index = 0;
+            else index++;
+        } while(playerList.get(index).isEliminated);
+    }
+
     private void startNewTurn() throws IOException {
         String tempMessage = "";
         String dudoOrNot = "";
+        Player tempPlayer;
         Player previousPlayer = getPrevious();
-        Player tempPlayer = playerList.get(index);;
+        try{
+            tempPlayer = playerList.get(index);
+        }
+        catch (IndexOutOfBoundsException e){
+            incrementIndex();
+            tempPlayer = playerList.get(index);
+        }
+
         boolean c = true;
         try{
             broadcast("it's the turn of: " + tempPlayer.username);
@@ -148,7 +197,22 @@ public class Game {
                         reStart();
                     }
                     else if(dudoOrNot.equals("1")){
-                        tempPlayer.myConnection.sendToClient("Ok");
+                        do{
+                            c = true;
+                            tempPlayer.myConnection.sendToClient("Ok, select if you want to increase the value or the number of the Dices \n" + "1. The value \n" + "2. The number");
+                            tempMessage = tempPlayer.myConnection.receiveFromClient();
+                            if(tempMessage.equals("1")){
+                                selectValue(tempPlayer);
+                            }
+                            else if(tempMessage.equals("2")){
+                                selectNumber(tempPlayer);
+                            }
+                            else{
+                                c = false;
+                                tempPlayer.myConnection.sendToClient("Please insert a valid option");
+                            }
+                        } while(!c);
+                        incrementIndex();
                     }
                     else{
                         c = false;
@@ -156,73 +220,77 @@ public class Game {
                     }
                 } while(!c);
             }
-            numberOfDice = -1;
-            valueOfDice = -1;
-            do{
-                c = true;
-                if(valueOfDice < 0 && !tempPlayer.isEliminated){
-                    tempPlayer.myConnection.sendToClient("decide the value of the number you want to search (for the jolly write j) (MAX = " + maxDiceValue + ")");
-                    tempMessage = tempPlayer.myConnection.receiveFromClient();
-                    if(tempMessage.equals("j")){
-                        valueOfDice = 1;
-                    }
-                    else{
-                        try {
-                            if(Integer.parseInt(tempMessage) <= maxDiceValue && Integer.parseInt(tempMessage) >= 2)
-                                valueOfDice = Integer.parseInt(tempMessage);
-                            else{
-                                tempPlayer.myConnection.sendToClient("Error repeat");
-                                c = false;
-                            }
-                        }
-                        catch (Exception e){
-                            valueOfDice = -1;
-                            tempPlayer.myConnection.sendToClient("Error repeat");
-                            c = false;
-                        }
-                    }
+            else{
+                numberOfDice = -1;
+                valueOfDice = -1;
+                if(!tempPlayer.isEliminated){
+                    selectValue(tempPlayer);
                 }
-                if(numberOfDice < 0  && !tempPlayer.isEliminated){
-                    try{
-                        tempPlayer.myConnection.sendToClient("decide what is the number of dice that has the value you input (it has to be less then how many are actually there do be correct)");
-                        numberOfDice = Integer.parseInt(tempPlayer.myConnection.receiveFromClient());
-                    }
-                    catch (IOException e){
-                        numberOfDice = -1;
-                        tempPlayer.myConnection.sendToClient("Error repeat");
-                        c = false;
-                    }
+                if(!tempPlayer.isEliminated){
+                    selectNumber(tempPlayer);
                 }
-            } while(!c);
-            if(!tempPlayer.isEliminated)
-                broadcast(tempPlayer.username + " claims that there are at least " + numberOfDice + " with the value " + valueOfDice);
-            do{
-                if(index == playerList.size()-1) index = 0;
-                else index++;
-            } while(playerList.get(index).isEliminated);
-            previousPlayer = tempPlayer;
+                if(!tempPlayer.isEliminated)
+                    broadcast(tempPlayer.username + " claims that there are at least " + numberOfDice + " with the value " + valueOfDice);
+                incrementIndex();
+            }
         } catch (IOException e){
+            playerList.remove(tempPlayer);
             tempPlayer.myConnection.disconnect();
+            broadcast(tempPlayer.username + " has disconnected");
         }
     }
 
-    private boolean dudo(int diceValue, int numberOfDice){
-        if(count(diceValue) < numberOfDice) return false;
-        else return true;
-    }
-
-    private Player getPrevious(){
-        int i = index;
+    private void selectValue(Player tempPlayer) throws IOException {
+        String tempMessage;
+        boolean c = true;
         do{
-            if(i == 0) i = playerList.size()-1;
-            else i--;
-        } while(playerList.get(i).isEliminated);
-        return playerList.get(i);
+            c = true;
+            tempPlayer.myConnection.sendToClient("decide the value of the number you want to search (for the jolly write j) (MAX = " + maxDiceValue + ")");
+            tempMessage = tempPlayer.myConnection.receiveFromClient();
+            if(tempMessage.equals("j")){
+                valueOfDice = 1;
+            }
+            else{
+                try {
+                    if (Integer.parseInt(tempMessage) <= maxDiceValue && Integer.parseInt(tempMessage) >= 2 && Integer.parseInt(tempMessage) >= valueOfDice){
+                        valueOfDice = Integer.parseInt(tempMessage);
+                }
+                    else{
+                        tempPlayer.myConnection.sendToClient("invalid input");
+                        c = false;
+                    }
+                }
+                catch (NumberFormatException e){
+                    valueOfDice = -1;
+                    tempPlayer.myConnection.sendToClient("Error repeat");
+                    c = false;
+                }
+            }
+        } while(!c);
+
     }
 
-    private void reStart() throws IOException {
-        rollAll();
-        addResults();
-        printDicePrivate();
+    private void selectNumber(Player tempPlayer) throws IOException {
+        boolean c = true;
+        String tempMessage;
+        do{
+            c = true;
+            try{
+                tempPlayer.myConnection.sendToClient("decide what is the number of dice that has the value you input (it has to be less then how many are actually there do be correct)");
+                tempMessage = tempPlayer.myConnection.receiveFromClient();
+                if(Integer.parseInt(tempMessage) > numberOfDice){
+                   numberOfDice = Integer.parseInt(tempMessage);
+                }
+                else{
+                    tempPlayer.myConnection.sendToClient("it has to be higher than " + numberOfDice);
+                    c = false;
+                }
+            }
+            catch (NumberFormatException e){
+                numberOfDice = -1;
+                tempPlayer.myConnection.sendToClient("Error repeat");
+                c = false;
+            }
+        } while(!c);
     }
 }

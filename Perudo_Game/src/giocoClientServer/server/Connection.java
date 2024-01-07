@@ -59,17 +59,17 @@ public class Connection implements Runnable{
                     }
                     else{
                         do{
-                            c = true;
+                            c = false;
                             printPublicGame();
                             sendToClient("Insert the game ID (if it's a private lobby it won't be in the list above)");
                             message = receiveFromClient();      // reiceve the lobby ID from the client
                             for(Game g : gameList){
-                                c = false;
                                 if(g.ID.equals(message) && !g.hasStarted && g.playerList.size()<g.maxPlayer){   // if a lobby with that ID exist then it connect to it
                                     g.addPlayer(new Player(username, g.startingDice, g.maxDiceValue, g, this));
                                     gameConnectedTo = message;
                                     c = true;
                                 }
+
                             }
                             if(!c){
                                 sendToClient("A game with that ID doesn't exist, it has already started or reached the max player");
@@ -125,7 +125,7 @@ public class Connection implements Runnable{
                             }
                             // MAX DICE VALUE
                             if((maxDiceValue>20 || maxDiceValue<=1) && c){
-                                sendToClient("Insert the dice max value (max = 20");
+                                sendToClient("Insert the dice max value (max = 20)");
                                 maxDiceValue = Integer.parseInt(receiveFromClient());
                                 if(maxDiceValue>20 || maxDiceValue<=1){
                                     sendToClient("Error repeat");
