@@ -1,6 +1,7 @@
 package giocoClientServer.server;
 
 import java.io.IOException;
+import java.net.SocketException;
 import java.util.LinkedList;
 import java.util.Random;
 
@@ -21,13 +22,13 @@ public class Game {
     LinkedList<Player> playerList = new LinkedList<>();
 
     public Game(int maxPlayer, int minPlayer, int maxDiceValue, int startingDice, Connection host, boolean isPublic) throws IOException {
-        this.maxPlayer = maxPlayer;
-        this.minPlayer = minPlayer;
-        this.maxDiceValue = maxDiceValue;
+        this.maxPlayer = maxPlayer;         //set the max of player in the lobby
+        this.minPlayer = minPlayer;         //set the minimum
+        this.maxDiceValue = maxDiceValue;   //set the of the value  of dices
         this.startingDice = startingDice;
-        this.isPublic = isPublic;
+        this.isPublic = isPublic;           //ask if the lobby is public or private
         ID = String.valueOf(new Random().nextInt(10000, 100000));
-        playerList.add(new Player(host.username, startingDice, maxDiceValue, this, host));
+        playerList.add(new Player(host.username, startingDice, maxDiceValue, this, host));  //when connected the server ask the username of the new client
         playerList.getFirst().myConnection.sendToClient("ID = " + ID);
         new Thread(new Runnable() {
             @Override
@@ -61,6 +62,12 @@ public class Game {
                             System.out.println("MMMH");
                         }
                     } while(numberOfRestingPlayer > 1 && playerList.size() > 1);
+                    for(Player p : playerList)
+                    {
+                        if(!p.isEliminated)
+                            broadcast("the player " + p.username + " is ha vinto");
+                    }
+                    System.out.println("");
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
@@ -139,6 +146,8 @@ public class Game {
     }
 
     private void reStart() throws IOException {
+        valueOfDice = -1;
+        numberOfDice = -1;
         rollAll();
         addResults();
         printDicePrivate();
@@ -229,14 +238,17 @@ public class Game {
                 if(!tempPlayer.isEliminated){
                     selectNumber(tempPlayer);
                 }
-                if(!tempPlayer.isEliminated)
+                if(!tempPlayer.isEliminated && valueOfDice!=1)
                     broadcast(tempPlayer.username + " claims that there are at least " + numberOfDice + " with the value " + valueOfDice);
                 incrementIndex();
+                if(valueOfDice == 1)
+                    broadcast(tempPlayer.username + " claims that there are at least " + numberOfDice + " with the value " + "j");
             }
-        } catch (IOException e){
+        } catch (SocketException e){
             playerList.remove(tempPlayer);
             tempPlayer.myConnection.disconnect();
             broadcast(tempPlayer.username + " has disconnected");
+            System.out.println(tempPlayer.username + " has disconnected");
         }
     }
 
