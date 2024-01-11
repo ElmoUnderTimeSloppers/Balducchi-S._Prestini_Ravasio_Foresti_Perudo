@@ -4,6 +4,8 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
+import java.net.SocketException;
+import java.util.ConcurrentModificationException;
 import java.util.LinkedList;
 
 public class Connection implements Runnable{
@@ -150,7 +152,7 @@ public class Connection implements Runnable{
                 }
                 else{
                     c = false;
-                    sendToClient("Pleas insert a valid option");
+                    sendToClient("Please insert a valid option");
                 }
             } while(!c);
             // FINISH
@@ -206,13 +208,9 @@ public class Connection implements Runnable{
      */
     public void disconnect() throws IOException {
         try{
-            for(Game g : gameList){
-                if(g.ID.equals(gameConnectedTo)){
-                    g.removePlayer(username);
-                }
-            }
             clientList.remove(this);
             System.out.println(this.username + " has disconnected");
+            client.close();
             this.out = null;
             this.in = null;
             this.client = null;

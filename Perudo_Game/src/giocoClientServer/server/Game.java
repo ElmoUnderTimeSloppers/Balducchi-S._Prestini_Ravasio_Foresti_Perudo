@@ -2,6 +2,7 @@ package giocoClientServer.server;
 
 import java.io.IOException;
 import java.net.SocketException;
+import java.util.ConcurrentModificationException;
 import java.util.LinkedList;
 import java.util.Random;
 
@@ -36,12 +37,19 @@ public class Game {
 
                 String message;
                 try{
-                    index = new Random().nextInt(0,playerList.size());
                     playerList.getFirst().myConnection.sendToClient("Write start to begin the game (you have to reach the minimum player)");
                     do{
-                        message = playerList.getFirst().myConnection.receiveFromClient();
-                        if(message.equals("start") && minPlayer <= playerList.size()){
-                            hasStarted = true;
+                        try{
+                            message = playerList.getFirst().myConnection.receiveFromClient();
+                            if(message.equals("start") && minPlayer <= playerList.size()){
+                                hasStarted = true;
+                            }
+                        }
+                        catch(SocketException e){
+                            playerList.getFirst().myConnection.disconnect();
+                            playerList.remove(0);
+                            if(!playerList.isEmpty())
+                                playerList.getFirst().myConnection.sendToClient("You are the new host");
                         }
                     }while(!hasStarted);
                 } catch(Exception e){
@@ -51,26 +59,32 @@ public class Game {
                         throw new RuntimeException(ex);
                     }
                 }
+                index = new Random().nextInt(0,playerList.size());
                 try {
                     reStart();
-                    numberOfRestingPlayer = playerList.size();
-                    do{
-                        try{
-                            startNewTurn();
-                        }
-                        catch (IOException e){
-                            System.out.println("MMMH");
-                        }
-                    } while(numberOfRestingPlayer > 1 && playerList.size() > 1);
-                    for(Player p : playerList)
-                    {
-                        if(!p.isEliminated)
-                            broadcast("the player " + p.username + " is ha vinto");
-                    }
-                    System.out.println("");
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
+                numberOfRestingPlayer = playerList.size();
+                do{
+                    try{
+                        startNewTurn();
+                    }
+                    catch (IOException e){
+                        System.out.println("MMMH");
+                    }
+                } while(numberOfRestingPlayer > 1 && playerList.size() > 1);
+                for(Player p : playerList)
+                {
+                    if(!p.isEliminated) {
+                        try {
+                            broadcast("the player " + p.username + " is ha vinto");
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                }
+                System.out.println("");
             }
         }).start();
     }
@@ -87,15 +101,16 @@ public class Game {
         }
     }
     private void broadcast(String message) throws IOException {
-        for(Player p : playerList){
+        for (Player p : playerList) {
             try{
                 p.myConnection.sendToClient(message);
-            } catch (IOException e){
-                removePlayer(p.username);
             }
-
+            catch(SocketException e) {
+                removePlayer2(p);
+            }
         }
     }
+
     private void rollAll(){
         for(Player p : playerList){
             p.Throw();
@@ -155,7 +170,7 @@ public class Game {
 
     private void incrementIndex(){
         do{
-            if(index == playerList.size()-1) index = 0;
+            if(index >= playerList.size()-1) index = 0;
             else index++;
         } while(playerList.get(index).isEliminated);
     }
@@ -245,11 +260,15 @@ public class Game {
                     broadcast(tempPlayer.username + " claims that there are at least " + numberOfDice + " with the value " + "j");
             }
         } catch (SocketException e){
-            playerList.remove(tempPlayer);
-            tempPlayer.myConnection.disconnect();
-            broadcast(tempPlayer.username + " has disconnected");
-            System.out.println(tempPlayer.username + " has disconnected");
+            removePlayer2(tempPlayer);
         }
+    }
+
+    private void removePlayer2(Player p) throws IOException {
+        playerList.remove(p);
+        p.myConnection.disconnect();
+        broadcast(p.username + " has disconnected");
+        System.out.println(p.username + " has disconnected");
     }
 
     private void selectValue(Player tempPlayer) throws IOException {
