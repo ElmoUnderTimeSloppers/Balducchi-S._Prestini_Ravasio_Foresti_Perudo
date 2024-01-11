@@ -233,12 +233,14 @@ public class Game {
                 if(!tempPlayer.isEliminated){
                     selectNumber(tempPlayer);
                 }
-                if(!tempPlayer.isEliminated && valueOfDice!=1)
-                    broadcast(tempPlayer.username + " claims that there are at least " + numberOfDice + " with the value " + valueOfDice);
-                incrementIndex();
-                if(valueOfDice == 1)
-                    broadcast(tempPlayer.username + " claims that there are at least " + numberOfDice + " with the value " + "j");
+
             }
+            if(!tempPlayer.isEliminated && valueOfDice!=1)
+                broadcast(tempPlayer.username + " claims that there are at least " + numberOfDice + " with the value " + valueOfDice);
+
+            else
+                broadcast(tempPlayer.username + " claims that there are at least " + numberOfDice + " with the value " + "j");
+            incrementIndex();
         } catch (SocketException e){
             removePlayer2(tempPlayer);
         }
