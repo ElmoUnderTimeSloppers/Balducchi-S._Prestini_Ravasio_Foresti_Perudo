@@ -216,7 +216,6 @@ public class Game {
                                 tempPlayer.myConnection.sendToClient("Please insert a valid option");
                             }
                         } while(!c);
-                        incrementIndex();
                     }
                     else{
                         c = false;
