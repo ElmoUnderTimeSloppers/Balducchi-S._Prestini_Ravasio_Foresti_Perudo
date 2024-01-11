@@ -78,7 +78,7 @@ public class Game {
                 {
                     if(!p.isEliminated) {
                         try {
-                            broadcast("the player " + p.username + " is ha vinto");
+                            broadcast("the player " + p.username + " is the winner");
                         } catch (IOException e) {
                             throw new RuntimeException(e);
                         }
