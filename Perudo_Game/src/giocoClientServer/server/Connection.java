@@ -232,4 +232,9 @@ public class Connection implements Runnable{
         }
         sendToClient("--------------");
     }
+    public static void removeGame(Game g){
+        gameList.remove(g);
+    }
 }
+
+

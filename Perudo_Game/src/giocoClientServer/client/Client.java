@@ -50,7 +50,7 @@ public class Client {
     }
 
     public static void main(String[] args) throws IOException {
-        Client c = new Client(new Socket("172.16.4.168", 1234));
+        Client c = new Client(new Socket("localhost", 1234));
         c.receiveMessage();
         c.sendMessage();
     }

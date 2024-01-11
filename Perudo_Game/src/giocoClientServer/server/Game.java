@@ -6,7 +6,7 @@ import java.util.ConcurrentModificationException;
 import java.util.LinkedList;
 import java.util.Random;
 
-public class Game {
+public class Game implements Runnable{
 
     int numberOfRestingPlayer = 0;
     int numberOfDice = -1;
@@ -31,82 +31,74 @@ public class Game {
         ID = String.valueOf(new Random().nextInt(10000, 100000));
         playerList.add(new Player(host.username, startingDice, maxDiceValue, this, host));  //when connected the server ask the username of the new client
         playerList.getFirst().myConnection.sendToClient("ID = " + ID);
-        new Thread(new Runnable() {
-            @Override
-            public void run() {
-
-                String message;
+        new Thread(this).start();
+    }
+    @Override
+    public void run() {
+        String message;
+        try{
+            playerList.getFirst().myConnection.sendToClient("Write start to begin the game (you have to reach the minimum player)");
+            do{
                 try{
-                    playerList.getFirst().myConnection.sendToClient("Write start to begin the game (you have to reach the minimum player)");
-                    do{
-                        try{
-                            message = playerList.getFirst().myConnection.receiveFromClient();
-                            if(message.equals("start") && minPlayer <= playerList.size()){
-                                hasStarted = true;
-                            }
-                        }
-                        catch(SocketException e){
-                            playerList.getFirst().myConnection.disconnect();
-                            playerList.remove(0);
-                            if(!playerList.isEmpty())
-                                playerList.getFirst().myConnection.sendToClient("You are the new host");
-                        }
-                    }while(!hasStarted);
-                } catch(Exception e){
-                    try {
-                        playerList.getFirst().myConnection.disconnect();
-                    } catch (IOException ex) {
-                        throw new RuntimeException(ex);
+                    message = playerList.getFirst().myConnection.receiveFromClient();
+                    if(message.equals("start") && minPlayer <= playerList.size()){
+                        hasStarted = true;
                     }
                 }
-                index = new Random().nextInt(0,playerList.size());
+                catch(SocketException e){
+                    playerList.getFirst().myConnection.disconnect();
+                    playerList.removeFirst();
+                    if(!playerList.isEmpty())
+                        playerList.getFirst().myConnection.sendToClient("You are the new host");
+                    else
+                        Connection.removeGame(this);
+                }
+            }while(!hasStarted);
+        } catch(Exception e){
+            try {
+                playerList.getFirst().myConnection.disconnect();
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
+        }
+        index = new Random().nextInt(0,playerList.size());
+        try {
+            reStart();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        numberOfRestingPlayer = playerList.size();
+        do{
+            try{
+                startNewTurn();
+            }
+            catch (IOException e){
+                System.out.println("MMMH");
+            }
+        } while(numberOfRestingPlayer > 1 && playerList.size() > 1);
+        for(Player p : playerList)
+        {
+            if(!p.isEliminated) {
                 try {
-                    reStart();
+                    broadcast("the player " + p.username + " is the winner");
                 } catch (IOException e) {
                     throw new RuntimeException(e);
                 }
-                numberOfRestingPlayer = playerList.size();
-                do{
-                    try{
-                        startNewTurn();
-                    }
-                    catch (IOException e){
-                        System.out.println("MMMH");
-                    }
-                } while(numberOfRestingPlayer > 1 && playerList.size() > 1);
-                for(Player p : playerList)
-                {
-                    if(!p.isEliminated) {
-                        try {
-                            broadcast("the player " + p.username + " is the winner");
-                        } catch (IOException e) {
-                            throw new RuntimeException(e);
-                        }
-                    }
-                }
-                System.out.println("");
             }
-        }).start();
+        }
     }
     public void addPlayer(Player p) throws IOException {
         playerList.add(p);
         broadcast(p.username + " has connected, the player count is " + playerList.size() + "/" + maxPlayer);
     }
-    public void removePlayer(String username1) throws IOException {
-        for(int i=0; i<playerList.size(); i++){
-            if(playerList.get(i).username.equals(username1)){
-                playerList.remove(i);
-                broadcast(username1 + " has disconnected");
-            }
-        }
-    }
+
     private void broadcast(String message) throws IOException {
         for (Player p : playerList) {
             try{
                 p.myConnection.sendToClient(message);
             }
             catch(SocketException e) {
-                removePlayer2(p);
+                removePlayer(p);
             }
         }
     }
@@ -120,12 +112,18 @@ public class Game {
 
     private void printDicePrivate() throws IOException {
         for(Player p : playerList){
-            p.myConnection.sendToClient(p.rToString());
+            try{
+                p.myConnection.sendToClient(p.rToString());
+            }
+            catch (SocketException e){
+                removePlayer(p);
+            }
+
         }
     }
     private void printDiceAll() throws IOException {
         for(Player p : playerList){
-            broadcast(p.rToString());
+            broadcast(p.rToString());   // Ravasio questa parte di codice non si modificherà da sola
         }
     }
 
@@ -203,7 +201,7 @@ public class Game {
                     else if(dudoOrNot.equals("1")){
                         do{
                             c = true;
-                            tempPlayer.myConnection.sendToClient("Ok, select if you want to increase the value or the number of the Dices \n" + "1. The value \n" + "2. The number");
+                            tempPlayer.myConnection.sendToClient("Ok, select if you want to increase the value or the number of the Dices \n" + "1. The value " + "(" + valueOfDice + ")" + "\n" + "2. The number " + "(" + numberOfDice + ")");
                             tempMessage = tempPlayer.myConnection.receiveFromClient();
                             if(tempMessage.equals("1")){
                                 selectValue(tempPlayer);
@@ -234,18 +232,17 @@ public class Game {
                 }
 
             }
-            if(!tempPlayer.isEliminated && valueOfDice!=1)
+            if(!tempPlayer.isEliminated && valueOfDice > 1)
                 broadcast(tempPlayer.username + " claims that there are at least " + numberOfDice + " with the value " + valueOfDice);
-
-            else
+            else if(valueOfDice == 1)
                 broadcast(tempPlayer.username + " claims that there are at least " + numberOfDice + " with the value " + "j");
             incrementIndex();
         } catch (SocketException e){
-            removePlayer2(tempPlayer);
+            removePlayer(tempPlayer);
         }
     }
 
-    private void removePlayer2(Player p) throws IOException {
+    private void removePlayer(Player p) throws IOException {
         playerList.remove(p);
         p.myConnection.disconnect();
         broadcast(p.username + " has disconnected");
@@ -260,13 +257,27 @@ public class Game {
             tempPlayer.myConnection.sendToClient("decide the value of the number you want to search (for the jolly write j) (MAX = " + maxDiceValue + ")");
             tempMessage = tempPlayer.myConnection.receiveFromClient();
             if(tempMessage.equals("j")){
+                if(valueOfDice > 0){
+                    numberOfDice = (int)(numberOfDice/2) + 1;
+                    tempPlayer.myConnection.sendToClient("Since you use jolly as value for your statement you have to also decide the number of the dices, remember it has to be more than half of the previous one");
+                    selectNumber(tempPlayer);
+                }
                 valueOfDice = 1;
             }
             else{
                 try {
-                    if (Integer.parseInt(tempMessage) <= maxDiceValue && Integer.parseInt(tempMessage) >= 2 && Integer.parseInt(tempMessage) >= valueOfDice){
+                    if (Integer.parseInt(tempMessage) <= maxDiceValue && Integer.parseInt(tempMessage) >= 2 && Integer.parseInt(tempMessage) > valueOfDice){
+                        if(valueOfDice == 1){
+                            numberOfDice = numberOfDice*2;
+                            tempPlayer.myConnection.sendToClient("Since the previous statement use the jolly as the value you also have to insert the number of dice to search, remember it has to be at least one over the last number of dices multiplied by 2");
+                            selectNumber(tempPlayer);
+                        }
                         valueOfDice = Integer.parseInt(tempMessage);
-                }
+                    }
+                    else if(valueOfDice == maxDiceValue){
+                        tempPlayer.myConnection.sendToClient("The value is already at his maximum, you have to use jolly");
+                        c = false;
+                    }
                     else{
                         tempPlayer.myConnection.sendToClient("invalid input");
                         c = false;
@@ -279,7 +290,6 @@ public class Game {
                 }
             }
         } while(!c);
-
     }
 
     private void selectNumber(Player tempPlayer) throws IOException {
@@ -288,7 +298,7 @@ public class Game {
         do{
             c = true;
             try{
-                tempPlayer.myConnection.sendToClient("decide what is the number of dice that has the value you input (it has to be less then how many are actually there do be correct)");
+                tempPlayer.myConnection.sendToClient("decide what is the number of dice that has the value (it has to be less then how many are actually there do be correct)");
                 tempMessage = tempPlayer.myConnection.receiveFromClient();
                 if(Integer.parseInt(tempMessage) > numberOfDice){
                    numberOfDice = Integer.parseInt(tempMessage);
@@ -328,4 +338,6 @@ public class Game {
         }
         reStart();
     }
+
+
 }
