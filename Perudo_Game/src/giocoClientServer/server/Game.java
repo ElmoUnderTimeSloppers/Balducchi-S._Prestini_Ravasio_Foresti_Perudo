@@ -198,27 +198,7 @@ public class Game {
                     tempPlayer.myConnection.sendToClient("do you think the statement is correct?\n" + "1. Yes, it's correct\n" + "2. Dudo, it's not correct");
                     dudoOrNot = tempPlayer.myConnection.receiveFromClient();
                     if(dudoOrNot.equals("2")){
-                        broadcast(tempPlayer.username + " claims dudo, lets check");
-                        printDiceAll();
-                        if(dudo(valueOfDice, numberOfDice)){
-                            broadcast("The dudo is false, " + tempPlayer.username + " gets one of his dice taken away");
-                            tempPlayer.numberOfDice--;
-                            if(tempPlayer.numberOfDice<1){
-                                broadcast(tempPlayer.username + " has finished his dices, he is eliminated");
-                                numberOfRestingPlayer--;
-                                tempPlayer.isEliminated = true;
-                            }
-                        }
-                        else{
-                            broadcast("The dudo is true, " + previousPlayer.username + " gets one of his dice taken away");
-                            previousPlayer.numberOfDice--;
-                            if(previousPlayer.numberOfDice<1){
-                                broadcast(previousPlayer.username + " has finished his dices, he is eliminated");
-                                numberOfRestingPlayer--;
-                                previousPlayer.isEliminated = true;
-                            }
-                        }
-                        reStart();
+                        dudo(tempPlayer, previousPlayer);
                     }
                     else if(dudoOrNot.equals("1")){
                         do{
@@ -323,5 +303,28 @@ public class Game {
                 c = false;
             }
         } while(!c);
+    }
+    public void dudo(Player tempPlayer, Player previousPlayer) throws IOException {
+        broadcast(tempPlayer.username + " claims dudo, lets check");
+        printDiceAll();
+        if(dudo(valueOfDice, numberOfDice)){
+            broadcast("The dudo is false, " + tempPlayer.username + " gets one of his dice taken away");
+            tempPlayer.numberOfDice--;
+            if(tempPlayer.numberOfDice<1){
+                broadcast(tempPlayer.username + " has finished his dices, he is eliminated");
+                numberOfRestingPlayer--;
+                tempPlayer.isEliminated = true;
+            }
+        }
+        else{
+            broadcast("The dudo is true, " + previousPlayer.username + " gets one of his dice taken away");
+            previousPlayer.numberOfDice--;
+            if(previousPlayer.numberOfDice<1){
+                broadcast(previousPlayer.username + " has finished his dices, he is eliminated");
+                numberOfRestingPlayer--;
+                previousPlayer.isEliminated = true;
+            }
+        }
+        reStart();
     }
 }
