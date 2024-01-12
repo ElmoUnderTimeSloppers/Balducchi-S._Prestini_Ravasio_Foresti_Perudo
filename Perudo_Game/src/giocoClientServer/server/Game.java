@@ -123,7 +123,7 @@ public class Game implements Runnable{
     }
     private void printDiceAll() throws IOException {
         for(Player p : playerList){
-            broadcast(p.rToString());   // Ravasio questa parte di codice non si modificherà da sola
+            broadcast(p.username + ": " + p.rToString());
         }
     }
 
