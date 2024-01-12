@@ -201,7 +201,7 @@ public class Game implements Runnable{
                     else if(dudoOrNot.equals("1")){
                         do{
                             c = true;
-                            tempPlayer.myConnection.sendToClient("Ok, select if you want to increase the value or the number of the Dices \n" + "1. The value " + "(" + valueOfDice + ")" + "\n" + "2. The number " + "(" + numberOfDice + ")");
+                            tempPlayer.myConnection.sendToClient("Ok, select if you want to increase the value or the number of the Dices \n" + "1. The value " + "(" + getValueCorrect(valueOfDice) + ")" + "\n" + "2. The number " + "(" + numberOfDice + ")");
                             tempMessage = tempPlayer.myConnection.receiveFromClient();
                             if(tempMessage.equals("1")){
                                 selectValue(tempPlayer);
@@ -232,10 +232,9 @@ public class Game implements Runnable{
                 }
 
             }
-            if(!tempPlayer.isEliminated && valueOfDice > 1)
-                broadcast(tempPlayer.username + " claims that there are at least " + numberOfDice + " with the value " + valueOfDice);
-            else if(valueOfDice == 1)
-                broadcast(tempPlayer.username + " claims that there are at least " + numberOfDice + " with the value " + "j");
+            if(!tempPlayer.isEliminated)
+                broadcast(tempPlayer.username + " claims that there are at least " + numberOfDice + " with the value " + getValueCorrect(valueOfDice));
+
             incrementIndex();
         } catch (SocketException e){
             removePlayer(tempPlayer);
@@ -256,13 +255,21 @@ public class Game implements Runnable{
             c = true;
             tempPlayer.myConnection.sendToClient("decide the value of the number you want to search (for the jolly write j) (MAX = " + maxDiceValue + ")");
             tempMessage = tempPlayer.myConnection.receiveFromClient();
-            if(tempMessage.equals("j")){
+            if(tempMessage.equals("j") && numberOfDice > 0 && valueOfDice != 1){
                 if(valueOfDice > 0){
-                    numberOfDice = (int)(numberOfDice/2) + 1;
+                    numberOfDice = (int)(numberOfDice/2) + (numberOfDice%2);
                     tempPlayer.myConnection.sendToClient("Since you use jolly as value for your statement you have to also decide the number of the dices, remember it has to be more than half of the previous one");
                     selectNumber(tempPlayer);
                 }
                 valueOfDice = 1;
+            }
+            else if(tempMessage.equals("j") && numberOfDice < 0){
+                tempPlayer.myConnection.sendToClient("You can't use the jolly at the start");
+                c = false;
+            }
+            else if(tempMessage.equals("j") && valueOfDice == 1){
+                tempPlayer.myConnection.sendToClient("You can't use the same value");
+                c = false;
             }
             else{
                 try {
@@ -320,24 +327,27 @@ public class Game implements Runnable{
         printDiceAll();
         if(dudo(valueOfDice, numberOfDice)){
             broadcast("The dudo is false, " + tempPlayer.username + " gets one of his dice taken away");
-            tempPlayer.numberOfDice--;
-            if(tempPlayer.numberOfDice<1){
-                broadcast(tempPlayer.username + " has finished his dices, he is eliminated");
-                numberOfRestingPlayer--;
-                tempPlayer.isEliminated = true;
-            }
+            RemoveDice(tempPlayer);
         }
         else{
             broadcast("The dudo is true, " + previousPlayer.username + " gets one of his dice taken away");
-            previousPlayer.numberOfDice--;
-            if(previousPlayer.numberOfDice<1){
-                broadcast(previousPlayer.username + " has finished his dices, he is eliminated");
-                numberOfRestingPlayer--;
-                previousPlayer.isEliminated = true;
-            }
+            RemoveDice(previousPlayer);
         }
         reStart();
     }
 
-
+    public void RemoveDice(Player tempPlayer) throws IOException {
+        tempPlayer.numberOfDice--;
+        if(tempPlayer.numberOfDice<1){
+            broadcast(tempPlayer.username + " has finished his dices, he is eliminated");
+            numberOfRestingPlayer--;
+            tempPlayer.isEliminated = true;
+        }
+    }
+    private String getValueCorrect(int i){
+        if(i == 1) return "j";
+        else return "" + i;
+    }
 }
+
+
