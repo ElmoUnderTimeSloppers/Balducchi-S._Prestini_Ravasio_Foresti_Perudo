@@ -1,12 +1,10 @@
 package giocoClientServer.server;
 
-import giocoClient.Dice;
-
 import java.util.LinkedList;
 
 public class Results {
     public LinkedList<Integer> results = new LinkedList<>();
-    private Dice d;
+    private final Dice d;
 
     Results(int max){
         d = new Dice(max);

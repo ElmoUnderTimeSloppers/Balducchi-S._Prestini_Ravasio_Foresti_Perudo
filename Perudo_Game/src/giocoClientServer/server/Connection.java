@@ -4,15 +4,12 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.Socket;
-import java.net.SocketException;
-import java.util.ConcurrentModificationException;
 import java.util.LinkedList;
 
 public class Connection implements Runnable{
 
     public static LinkedList<Connection> clientList = new LinkedList<>();       // A list of all the connection in the server
-    public static LinkedList<Game> gameList = new LinkedList<>();               // A list of all the game that are being played
-    private String gameConnectedTo = "NOT CONNECTED";                           // What game this client is going to play in
+    public static LinkedList<Game> gameList = new LinkedList<>();               // A list of all the game that are being played     // What game this client is going to play in
     public Socket client;                                                       // the socket of the client
     private DataOutputStream out;                                               // Used to send out messages to the client
     private DataInputStream in;                                                 // Used to receive the messages from the client
@@ -31,7 +28,7 @@ public class Connection implements Runnable{
     @Override
     public void run() {
         String message;     // Temporary String used to receive messages
-        boolean c = true;   // Variable that decides if you can continue
+        boolean c;          // Variable that decides if you can continue
         try{
             //          ASKING USERNAME
             do{
@@ -64,11 +61,10 @@ public class Connection implements Runnable{
                             c = false;
                             printPublicGame();
                             sendToClient("Insert the game ID (if it's a private lobby it won't be in the list above)");
-                            message = receiveFromClient();      // reiceve the lobby ID from the client
+                            message = receiveFromClient();      // receive the lobby ID from the client
                             for(Game g : gameList){
                                 if(g.ID.equals(message) && !g.hasStarted && g.playerList.size()<g.maxPlayer){   // if a lobby with that ID exist then it connect to it
-                                    g.addPlayer(new Player(username, g.startingDice, g.maxDiceValue, g, this));
-                                    gameConnectedTo = message;
+                                    g.addPlayer(new Player(username, g.startingDice, g.maxDiceValue, this));
                                     c = true;
                                 }
 
@@ -81,7 +77,6 @@ public class Connection implements Runnable{
                 }
                 // Option 2: Creating a custom lobby
                 else if(message.equals("2")){
-                    c = true;
                     // We have 4 customizable option for the lobby
                     boolean isPublic = true;// IF THE LOBBY IS PUBLIC OR PRIVATE
                     String decision = "";
@@ -93,7 +88,7 @@ public class Connection implements Runnable{
                         try{
                             c = true;
                             // PUBLIC OR PRIVATE
-                            if(!decision.equals("1") || !decision.equals("2")){
+                            if(!decision.equals("1") && !decision.equals("2")){
                                 sendToClient("Do you want the lobby to be private or public\n" + "1. Public\n" + "2. Private");
                                 decision = receiveFromClient();
                                 if(decision.equals("1")){
@@ -108,38 +103,42 @@ public class Connection implements Runnable{
                                 }
                             }
                             // MAX PLAYER
-                            if(maxPlayer>6 || maxPlayer<2){
+                            if(maxPlayer<1){
                                 sendToClient("Insert the game maximum number of player (max = 6)");
                                 maxPlayer = Integer.parseInt(receiveFromClient());
                                 if(maxPlayer>6 || maxPlayer<2){
                                     sendToClient("Error repeat");
+                                    maxPlayer = -1;
                                     c = false;
                                 }
                             }
                             // MIN PLAYER
-                            if((minPlayer<2 || minPlayer>maxPlayer) && c){
+                            if((minPlayer<1) && c){
                                 sendToClient("Insert the game minimum number of player (minimum = 2)");
                                 minPlayer = Integer.parseInt(receiveFromClient());
                                 if(minPlayer<2 || minPlayer>maxPlayer){
                                     sendToClient("Error repeat");
+                                    minPlayer = -1;
                                     c = false;
                                 }
                             }
                             // MAX DICE VALUE
-                            if((maxDiceValue>20 || maxDiceValue<=1) && c){
+                            if((maxDiceValue<1) && c){
                                 sendToClient("Insert the dice max value (max = 20)");
                                 maxDiceValue = Integer.parseInt(receiveFromClient());
                                 if(maxDiceValue>20 || maxDiceValue<=1){
                                     sendToClient("Error repeat");
+                                    maxDiceValue = -1;
                                     c = false;
                                 }
                             }
                             // STARTING NUMBER OF DICE
-                            if((startingDice > 10 || startingDice < 1) && c){
+                            if((startingDice < 1) && c){
                                 sendToClient("Insert the number of starting dice (max = 10)");
                                 startingDice = Integer.parseInt(receiveFromClient());
                                 if(startingDice>10 || startingDice < 1){
                                     sendToClient("Error repeat");
+                                    startingDice = -1;
                                     c = false;
                                 }
                             }
@@ -161,15 +160,15 @@ public class Connection implements Runnable{
             try {
                 disconnect();
             } catch (IOException ex) {
-                ex.printStackTrace();
+                System.out.println("error");
             }
         }
     }
 
     /**
      * A function that sent a message to the client, to use insert the message in the parameter
-     * @param message
-     * @throws IOException
+     * @param message message
+     * @throws IOException can happen
      */
     public void sendToClient(String message) throws IOException {
         out.writeUTF(message);
@@ -177,34 +176,16 @@ public class Connection implements Runnable{
 
     /**
      * A function used to receive messages from the client, it will return the messages as a String
-     * @return
-     * @throws IOException
+     * @return returns the message that the client wrote
+     * @throws IOException can happen
      */
     public String receiveFromClient() throws IOException {
         return in.readUTF();
     }
 
     /**
-     * A function that sends a messages to all the client except the one that is in this connection
-     * @param message
-     * @throws IOException
-     */
-    private void broadcast(String message) throws IOException {
-        for(Connection c : clientList){
-            try{
-                if(!c.username.equals(this.username)){
-                    c.out.writeUTF(message);
-                }
-            }
-            catch (IOException e){
-                this.disconnect();
-            }
-        }
-    }
-
-    /**
      * Disconnect the client deleting the connection
-     * @throws IOException
+     * @throws IOException can happen
      */
     public void disconnect() throws IOException {
         try{
@@ -215,12 +196,15 @@ public class Connection implements Runnable{
             this.in = null;
             this.client = null;
             this.username = null;
-            this.gameConnectedTo = null;
         } catch (Exception e){
-            e.printStackTrace();
+            System.out.println("error");
         }
     }
 
+    /**
+     * Function that prints all the public games
+     * @throws IOException can happen
+     */
     public void printPublicGame() throws IOException {
         int i = 1;
         sendToClient("Public lobbies:");
@@ -232,6 +216,11 @@ public class Connection implements Runnable{
         }
         sendToClient("--------------");
     }
+
+    /**
+     * removes the game from the game the list
+     * @param g the game to remove
+     */
     public static void removeGame(Game g){
         gameList.remove(g);
     }

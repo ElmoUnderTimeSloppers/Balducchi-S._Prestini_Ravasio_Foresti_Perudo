@@ -8,7 +8,7 @@ public class Server {
     public static ServerSocket ss;
 
     public Server(ServerSocket ss) {
-        this.ss = ss;
+        Server.ss = ss;
     }
 
     public void startServer(){
@@ -22,7 +22,7 @@ public class Server {
             }
         }
         catch (IOException e){
-
+            System.out.println("error");
         }
     }
 
