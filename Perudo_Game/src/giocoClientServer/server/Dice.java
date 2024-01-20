@@ -3,7 +3,7 @@ package giocoClientServer.server;
 import java.util.Random;
 
 public class Dice {
-    private final int max;      // maximum value of diec
+    private final int max;      // maximum value of dice
 
     public Dice(int max) {
         this.max = max;

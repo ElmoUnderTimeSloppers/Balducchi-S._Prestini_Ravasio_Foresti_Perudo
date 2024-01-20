@@ -75,6 +75,11 @@ public class Game implements Runnable{
         }
         numberOfRestingPlayer = playerList.size();
         // START
+        /*
+        for(Player p : playerList){
+            p.startReceiving();
+        }
+        */
         do{
             try{
                 startNewTurn();
@@ -250,6 +255,7 @@ public class Game implements Runnable{
             incrementIndex();
             tempPlayer = playerList.get(index);
         }
+        // tempPlayer.stopReceiving(); DOESN'T WORK
 
         boolean c;          // used to see if the player can continue
         try{
@@ -305,10 +311,11 @@ public class Game implements Runnable{
                 }
 
             }
-            if(!tempPlayer.isEliminated)
+            if(!tempPlayer.isEliminated && (valueOfDice > 0 && numberOfDice > 0))
                 broadcast(tempPlayer.username + " claims that there are at least " + numberOfDice + " with the value " + getValueCorrect(valueOfDice));
 
             incrementIndex();
+            // tempPlayer.startReceiving(); THIS DOESN'T WORK
         } catch (SocketException e){
             // catch disconnection
             removePlayer(tempPlayer);
@@ -399,7 +406,7 @@ public class Game implements Runnable{
                 tempPlayer.myConnection.sendToClient("decide what is the number of dice that has the value (it has to be less then how many are actually there do be correct)");
                 tempMessage = tempPlayer.myConnection.receiveFromClient();
                 if(Integer.parseInt(tempMessage) > numberOfDice){   // if it's more then the last number of dices it's ok
-                   numberOfDice = Integer.parseInt(tempMessage);
+                    numberOfDice = Integer.parseInt(tempMessage);
                 }
                 else{
                     // error
@@ -460,5 +467,3 @@ public class Game implements Runnable{
         else return "" + i;
     }
 }
-
-
