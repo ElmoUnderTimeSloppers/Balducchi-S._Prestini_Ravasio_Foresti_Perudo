@@ -14,6 +14,7 @@ public class Results {
         for(int i = 0; i < nDice; i++) results.add(d.Throw());
     }
 
+
     @Override
     public String toString() {
         String s = "";
