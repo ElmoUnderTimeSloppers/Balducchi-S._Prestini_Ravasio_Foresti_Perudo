@@ -9,11 +9,7 @@ public class Player implements Runnable{
     public Connection myConnection;             // The connection between client and server
     public int numberOfDice;                    // The number of dice the player has
     public Results results;                     // The results of those dices
-    private final Thread receiveMessage = new Thread(this);
-    /*
-    * This should be the thread used to receive messages, but it won't stop
-    * I'll leave it here for further testing
-    */
+    public Game gameConnectedTo;
 
     /**
      * save the player information in the server that are acquired through client
@@ -23,11 +19,12 @@ public class Player implements Runnable{
      * @param myConnection the connection
      * @throws IOException can happen
      */
-    Player(String username, int nDice, int maxDiceValue, Connection myConnection) throws IOException {
+    Player(String username, int nDice, int maxDiceValue, Connection myConnection, Game gameConnectedTo) throws IOException {
         results = new Results(maxDiceValue);
         this.username = username;
         this.numberOfDice = nDice;
         this.myConnection = myConnection;
+        this.gameConnectedTo = gameConnectedTo;
     }
 
     /**
@@ -49,9 +46,12 @@ public class Player implements Runnable{
     @Override
     public void run() {     // THIS IS A TEST, THE THREAD WON'T STOP I DON'T KNOW WHY
         try{
-            String message;
-            while(myConnection.client.isConnected()){
+            String message = "";
+            while(myConnection.client.isConnected() && !message.equals("pong")){
                 message = myConnection.receiveFromClient();
+                if(message.equals("calza")){
+                    gameConnectedTo.callCalza(this);
+                }
                 System.out.println(message);
             }
         }
@@ -61,13 +61,12 @@ public class Player implements Runnable{
     }
 
     public void startReceiving(){
-        synchronized (this){
-            receiveMessage.start();
-        }
+        Thread receiveMessage = new Thread(this);
+        receiveMessage.start();
     }
-    public void stopReceiving(){
-        synchronized (this){
-            receiveMessage.interrupt();
-        }
+    public void stopReceiving() throws IOException {
+        myConnection.ping();
+
+
     }
 }

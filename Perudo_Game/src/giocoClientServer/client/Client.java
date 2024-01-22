@@ -51,8 +51,12 @@ public class Client {
                 String message;
                 while(client.isConnected()){
                     message = in.readUTF();
-                    System.out.println(message);
+                    if(!message.equals("ping"))
+                        System.out.println(message);
+                    else
+                        out.writeUTF("pong");
                 }
+
             }
             catch (IOException e){
                 System.out.println("Error");

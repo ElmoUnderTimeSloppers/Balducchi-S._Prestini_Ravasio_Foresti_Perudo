@@ -64,7 +64,7 @@ public class Connection implements Runnable{
                             message = receiveFromClient();      // receive the lobby ID from the client
                             for(Game g : gameList){
                                 if(g.ID.equals(message) && !g.hasStarted && g.playerList.size()<g.maxPlayer){   // if a lobby with that ID exist then it connect to it
-                                    g.addPlayer(new Player(username, g.startingDice, g.maxDiceValue, this));
+                                    g.addPlayer(new Player(username, g.startingDice, g.maxDiceValue, this, g));
                                     c = true;
                                 }
 
@@ -223,6 +223,10 @@ public class Connection implements Runnable{
      */
     public static void removeGame(Game g){
         gameList.remove(g);
+    }
+
+    public void ping() throws IOException {
+        sendToClient("ping");
     }
 }
 
