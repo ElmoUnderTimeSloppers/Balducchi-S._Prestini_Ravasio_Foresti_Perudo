@@ -44,19 +44,23 @@ public class Player implements Runnable{
 
 
     @Override
-    public void run() {     // THIS IS A TEST, THE THREAD WON'T STOP I DON'T KNOW WHY
+    public void run() {     // start receiving message from client
         try{
             String message = "";
             while(myConnection.client.isConnected() && !message.equals("pong")){
                 message = myConnection.receiveFromClient();
-                if(message.equals("calza")){
+                if(message.equals("calza")){                                        //if someone calls calza then the server stop the current player
                     gameConnectedTo.callCalza(this);
                 }
                 System.out.println(message);
             }
         }
         catch (IOException e){
-            System.out.println("Error");
+            try {
+                this.gameConnectedTo.removePlayer(this);
+            } catch (IOException ex) {
+                throw new RuntimeException(ex);
+            }
         }
     }
 

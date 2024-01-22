@@ -279,7 +279,7 @@ public class Game implements Runnable{
                     }
                     else if(dudoOrNot.equals("2")){      // the player checks for dudo
                         dudo(tempPlayer, previousPlayer);
-                        calza = false;
+                        resetCalza();
                     }
                     else if(dudoOrNot.equals("1")){     // the player doesn't check for dudo
                         do{
@@ -298,7 +298,7 @@ public class Game implements Runnable{
                                 tempPlayer.myConnection.sendToClient("Please insert a valid option");
                             }
                         } while(!c);
-                        calza = false;
+                        resetCalza();
                     }
                     else{
                         // error
@@ -319,7 +319,7 @@ public class Game implements Runnable{
                 if(!tempPlayer.isEliminated){
                     selectNumber(tempPlayer);
                 }
-                calza = false;
+                resetCalza();
 
             }
             if(!tempPlayer.isEliminated && (valueOfDice > 0 && numberOfDice > 0) && !calza)
@@ -338,7 +338,7 @@ public class Game implements Runnable{
      * @param p the player to remove
      * @throws IOException can happen
      */
-    private void removePlayer(Player p) throws IOException {
+    public void removePlayer(Player p) throws IOException {
         playerList.remove(p);
         p.myConnection.disconnect();
         broadcast(p.username + " has disconnected");
@@ -480,6 +480,11 @@ public class Game implements Runnable{
     public void callCalza(Player calzaPlayer){
         calza = true;
         this.calzaPlayer = calzaPlayer;
+    }
+
+    public void resetCalza(){
+        calza = false;
+        this.calzaPlayer = null;
     }
 
     public void Calza() throws IOException {
