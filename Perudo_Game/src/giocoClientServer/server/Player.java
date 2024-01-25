@@ -1,7 +1,6 @@
 package giocoClientServer.server;
 
 import java.io.IOException;
-import java.util.Scanner;
 
 public class Player implements Runnable{
     public String username;                     // The username of the player
@@ -9,18 +8,19 @@ public class Player implements Runnable{
     public Connection myConnection;             // The connection between client and server
     public int numberOfDice;                    // The number of dice the player has
     public Results results;                     // The results of those dices
-    public Game gameConnectedTo;
+    public Game gameConnectedTo;                // The game the player is connected to
+    boolean c = false;
 
     /**
      * save the player information in the server that are acquired through client
      * @param username Username of the player
      * @param nDice number of dice
-     * @param maxDiceValue max value of the dice
+     * @param maxDieValue max value of the dice
      * @param myConnection the connection
      * @throws IOException can happen
      */
-    Player(String username, int nDice, int maxDiceValue, Connection myConnection, Game gameConnectedTo) throws IOException {
-        results = new Results(maxDiceValue);
+    Player(String username, int nDice, int maxDieValue, Connection myConnection, Game gameConnectedTo) throws IOException {
+        results = new Results(maxDieValue);
         this.username = username;
         this.numberOfDice = nDice;
         this.myConnection = myConnection;
@@ -47,10 +47,15 @@ public class Player implements Runnable{
     public void run() {     // start receiving message from client
         try{
             String message = "";
-            while(myConnection.client.isConnected() && !message.equals("pong")){
+            while(myConnection.client.isConnected()){
                 message = myConnection.receiveFromClient();
-                if(message.equals("calza")){                                        //if someone calls calza then the server stop the current player
+                if(message.equals("calza") || message.equals("ng \u0001")){                                        //if someone calls calza then the server stop the current player
                     gameConnectedTo.callCalza(this);
+                }
+                else if(message.equals("pong")){
+                    c = false;
+                    System.out.println("STOPPED RECEIVING");
+                    break;
                 }
                 System.out.println(message);
             }
@@ -65,12 +70,11 @@ public class Player implements Runnable{
     }
 
     public void startReceiving(){
+        c = true;
         Thread receiveMessage = new Thread(this);
         receiveMessage.start();
     }
     public void stopReceiving() throws IOException {
         myConnection.ping();
-
-
     }
 }

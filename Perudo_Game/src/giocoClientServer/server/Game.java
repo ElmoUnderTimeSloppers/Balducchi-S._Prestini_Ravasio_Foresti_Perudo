@@ -8,29 +8,29 @@ import java.util.Random;
 public class Game implements Runnable{
 
     int numberOfRestingPlayer = 0;      // Number of player which hasn't been eliminated
-    int numberOfDice = -1;              // number of dice for the statement
-    int valueOfDice = -1;               // value of dice for the statement
+    int numberOfDice = -1;              // number of die for the statement
+    int valueOfDice = -1;               // value of die for the statement
     int index = 0;                      // the index for the turn
     public boolean isPublic;            // says if the game is public
     public boolean hasStarted = false;  // says if the game has started
     private LinkedList<Integer> results = new LinkedList<>();   // list of results
     public int maxPlayer;               // maximum number of player
     public int minPlayer;               // minimum number of player
-    public int maxDiceValue;            // max value of the dice
-    public int startingDice;            // number of starting dice
+    public int maxDieValue;            // max value of the die
+    public int startingDice;            // number of starting die
     public String ID;                   // game ID
     boolean calza = false;
     private Player calzaPlayer;
     LinkedList<Player> playerList = new LinkedList<>();         // list of player
 
-    public Game(int maxPlayer, int minPlayer, int maxDiceValue, int startingDice, Connection host, boolean isPublic) throws IOException {
+    public Game(int maxPlayer, int minPlayer, int maxDieValue, int startingDie, Connection host, boolean isPublic) throws IOException {
         this.maxPlayer = maxPlayer;         //set the max of player in the lobby
         this.minPlayer = minPlayer;         //set the minimum
-        this.maxDiceValue = maxDiceValue;   //set the of the value  of dices
-        this.startingDice = startingDice;   //set the number of starting dice
+        this.maxDieValue = maxDieValue;     //set the max value of the dice
+        this.startingDice = startingDie;     //set the number of starting die
         this.isPublic = isPublic;           //ask if the lobby is public or private
         ID = String.valueOf(new Random().nextInt(10000, 100000));   // randomize the game ID
-        playerList.add(new Player(host.username, startingDice, maxDiceValue, host, this));  //when connected the server ask the username of the new client
+        playerList.add(new Player(host.username, startingDie, maxDieValue, host, this));  //when connected the server ask the username of the new client
         playerList.getFirst().myConnection.sendToClient("ID = " + ID);
         new Thread(this).start();
     }
@@ -86,7 +86,7 @@ public class Game implements Runnable{
             try{
                 startNewTurn();
             }
-            catch (IOException e){
+            catch (IOException | InterruptedException e){
                 System.out.println("error");
             }
         } while(numberOfRestingPlayer > 1 && playerList.size() > 1);    // if the number of player is one then it finishes
@@ -133,7 +133,7 @@ public class Game implements Runnable{
     }
 
     /**
-     * rolls every players dices
+     * rolls every players dice
      */
     private void rollAll(){
         for(Player p : playerList){
@@ -143,7 +143,7 @@ public class Game implements Runnable{
     }
 
     /**
-     * prints the results of the dices to every player privately (every player will see his dices)
+     * prints the results of the dice to every player privately (every player will see his dice)
      * @throws IOException can happen
      */
     private void printDicePrivate() throws IOException {
@@ -160,7 +160,7 @@ public class Game implements Runnable{
     }
 
     /**
-     * prints the results of the dices to every player (every player will see everyone's dices)
+     * prints the results of the dice to every player (every player will see everyone's dice)
      * @throws IOException can happen
      */
     private void printDiceAll() throws IOException {
@@ -170,7 +170,7 @@ public class Game implements Runnable{
     }
 
     /**
-     * adds the results of the dices to a list, used later for dudo
+     * adds the results of the dice to a list, used later for dudo
      */
     private void addResults(){
         results.clear();
@@ -180,9 +180,9 @@ public class Game implements Runnable{
     }
 
     /**
-     * counts how many number N dices are in the results
+     * counts how many number N dice are in the results
      * @param n the number to search
-     * @return how many dices there are
+     * @return how many dice there are
      */
     private int count(int n){
         int c = 0;
@@ -197,15 +197,15 @@ public class Game implements Runnable{
     /**
      * checks for Dudo
      * @param diceValue the value to search
-     * @param numberOfDice the number of dices the player said
-     * @return if true it means there were more dices with that value then what it was said, if false it means there were less
+     * @param numberOfDice the number of dice the player said
+     * @return if true it means there were more dice with that value then what it was said, if false it means there were less
      */
     private boolean dudo(int diceValue, int numberOfDice){
         return count(diceValue) >= numberOfDice;
     }
 
     /**
-     * return the previous player, used to remove dices if the dudo is false
+     * return the previous player, used to remove dice if the dudo is false
      * @return the previous player
      */
     private Player getPrevious(){
@@ -218,7 +218,7 @@ public class Game implements Runnable{
     }
 
     /**
-     * restart, used at the start of the turn, it rolls everyone dices, adds the results, print the dices value privately
+     * restart, used at the start of the turn, it rolls everyone dice, adds the results, print the dices value privately
      * @throws IOException can happen
      */
     private void reStart() throws IOException {
@@ -243,7 +243,7 @@ public class Game implements Runnable{
      * main function to the game, it starts a new turn
      * @throws IOException can happen
      */
-    private void startNewTurn() throws IOException {
+    private void startNewTurn() throws IOException, InterruptedException {
         calza = false;
         calzaPlayer = null;
         String tempMessage;         // used as a temporary string to get the message from the client
@@ -259,8 +259,8 @@ public class Game implements Runnable{
             incrementIndex();
             tempPlayer = playerList.get(index);
         }
-        tempPlayer.stopReceiving();//
-
+        tempPlayer.stopReceiving();     // Two thread can't use the same input stream at the same time, so we stop 1
+        startWaiting(1000);
         boolean c;          // used to see if the player can continue
         try{
             broadcast("it's the turn of: " + tempPlayer.username);
@@ -269,9 +269,9 @@ public class Game implements Runnable{
                 //
                 // turn that isn't the first
                 //
+                tempPlayer.myConnection.sendToClient("do you think the statement is correct?\n" + "1. Yes, it's correct\n" + "2. Dudo, it's not correct");
                 do{
                     c = true;
-                    tempPlayer.myConnection.sendToClient("do you think the statement is correct?\n" + "1. Yes, it's correct\n" + "2. Dudo, it's not correct");
                     dudoOrNot = tempPlayer.myConnection.receiveFromClient();
                     if(calza){
                         Calza();
@@ -284,7 +284,7 @@ public class Game implements Runnable{
                     else if(dudoOrNot.equals("1")){     // the player doesn't check for dudo
                         do{
                             c = true;
-                            tempPlayer.myConnection.sendToClient("Ok, select if you want to increase the value or the number of the Dices \n" + "1. The value " + "(" + getValueCorrect(valueOfDice) + ")" + "\n" + "2. The number " + "(" + numberOfDice + ")");
+                            tempPlayer.myConnection.sendToClient("Ok, select if you want to increase the value or the number of the Dice \n" + "1. The value " + "(" + getValueCorrect(valueOfDice) + ")" + "\n" + "2. The number " + "(" + numberOfDice + ")");
                             tempMessage = tempPlayer.myConnection.receiveFromClient();
                             if(tempMessage.equals("1")){        // change the value
                                 selectValue(tempPlayer);
@@ -300,12 +300,17 @@ public class Game implements Runnable{
                         } while(!c);
                         resetCalza();
                     }
+                    else if(dudoOrNot.equals("pong")){
+                        tempPlayer.stopReceiving();
+                        c = false;
+                    }
                     else{
                         // error
                         c = false;
                         tempPlayer.myConnection.sendToClient("Please insert a valid option");
                     }
                 } while(!c);
+                previousPlayer.startReceiving();
             }
             else{
                 //
@@ -325,7 +330,7 @@ public class Game implements Runnable{
             if(!tempPlayer.isEliminated && (valueOfDice > 0 && numberOfDice > 0) && !calza)
                 broadcast(tempPlayer.username + " claims that there are at least " + numberOfDice + " with the value " + getValueCorrect(valueOfDice));
 
-            tempPlayer.startReceiving();
+
             incrementIndex();
         } catch (SocketException e){
             // catch disconnection
@@ -353,9 +358,9 @@ public class Game implements Runnable{
     private void selectValue(Player tempPlayer) throws IOException {
         String tempMessage;
         boolean c;
+        tempPlayer.myConnection.sendToClient("decide the value of the number you want to search (for the jolly write j) (MAX = " + maxDieValue + ")");
         do{
             c = true;
-            tempPlayer.myConnection.sendToClient("decide the value of the number you want to search (for the jolly write j) (MAX = " + maxDiceValue + ")");
             tempMessage = tempPlayer.myConnection.receiveFromClient();
             if(tempMessage.equals("j") && numberOfDice > 0 && valueOfDice != 1){ // if the value is j it needs to set it has 1
                 if(valueOfDice > 0){    // when you use jolly you have to reinsert the number of dice
@@ -373,9 +378,13 @@ public class Game implements Runnable{
                 tempPlayer.myConnection.sendToClient("You can't use the same value");
                 c = false;
             }
+            else if(tempMessage.equals("pong")){
+                tempPlayer.stopReceiving();
+                c = false;
+            }
             else{
                 try {
-                    if (Integer.parseInt(tempMessage) <= maxDiceValue && Integer.parseInt(tempMessage) >= 2 && Integer.parseInt(tempMessage) > valueOfDice){
+                    if (Integer.parseInt(tempMessage) <= maxDieValue && Integer.parseInt(tempMessage) >= 2 && Integer.parseInt(tempMessage) > valueOfDice){
                         if(valueOfDice == 1){   // if the value was a jolly you have to insert the number again
                             numberOfDice = numberOfDice*2;
                             tempPlayer.myConnection.sendToClient("Since the previous statement use the jolly as the value you also have to insert the number of dice to search, remember it has to be at least one over the last number of dices multiplied by 2");
@@ -383,7 +392,7 @@ public class Game implements Runnable{
                         }
                         valueOfDice = Integer.parseInt(tempMessage);
                     }
-                    else if(valueOfDice == maxDiceValue){   // if the value is at his maximum you have to use jolly
+                    else if(valueOfDice == maxDieValue){   // if the value is at his maximum you have to use jolly
                         tempPlayer.myConnection.sendToClient("The value is already at his maximum, you have to use jolly");
                         c = false;
                     }
@@ -404,7 +413,7 @@ public class Game implements Runnable{
     }
 
     /**
-     * selects the number of dices for the statement
+     * selects the number of dice for the statement
      * @param tempPlayer the player whose turn it is
      * @throws IOException can happen
      */
@@ -444,25 +453,25 @@ public class Game implements Runnable{
         broadcast(tempPlayer.username + " claims dudo, lets check");
         printDiceAll();
         if(dudo(valueOfDice, numberOfDice)){    // if it's false
-            broadcast("The dudo is false, " + tempPlayer.username + " gets one of his dice taken away");
+            broadcast("The dudo is false, " + tempPlayer.username + " gets one of his die taken away");
             RemoveDice(tempPlayer);
         }
         else{                                   // if it's true
-            broadcast("The dudo is true, " + previousPlayer.username + " gets one of his dice taken away");
+            broadcast("The dudo is true, " + previousPlayer.username + " gets one of his die taken away");
             RemoveDice(previousPlayer);
         }
         reStart();
     }
 
     /**
-     * removes a dice to the player
+     * removes a die to the player
      * @param tempPlayer the player
      * @throws IOException can happen
      */
     public void RemoveDice(Player tempPlayer) throws IOException {
         tempPlayer.numberOfDice--;
         if(tempPlayer.numberOfDice<1){ // checks if eliminated
-            broadcast(tempPlayer.username + " has finished his dices, he is eliminated");
+            broadcast(tempPlayer.username + " has finished his dice, he is eliminated");
             numberOfRestingPlayer--;
             tempPlayer.isEliminated = true;
         }
@@ -477,27 +486,46 @@ public class Game implements Runnable{
         if(i == 1) return "j";
         else return "" + i;
     }
+
+    /**
+     * When someone calls calza
+     * @param calzaPlayer the player who called calza
+     */
     public void callCalza(Player calzaPlayer){
         calza = true;
         this.calzaPlayer = calzaPlayer;
     }
 
+    /**
+     * Used to reset the calza statement
+     */
     public void resetCalza(){
         calza = false;
         this.calzaPlayer = null;
     }
 
+    /**
+     * Used to check for calza
+     * @throws IOException can happen
+     */
     public void Calza() throws IOException {
         broadcast(calzaPlayer.username + " calls calza, let's check");
         printDiceAll();
         if(count(valueOfDice) == numberOfDice){
-            broadcast("It's correct, " + calzaPlayer.username + " obtains a dice");
+            broadcast("It's correct, " + calzaPlayer.username + " obtains a die");
             calzaPlayer.numberOfDice++;
         }
         else{
-            broadcast("It isn't correct, " + calzaPlayer.username + " loses a dice");
-            calzaPlayer.numberOfDice--;
+            broadcast("It isn't correct, " + calzaPlayer.username + " loses a die");
+            RemoveDice(calzaPlayer);
         }
         reStart();
+    }
+
+
+    public void startWaiting(int milliseconds) throws InterruptedException {
+        synchronized (this){
+            this.wait(milliseconds);
+        }
     }
 }

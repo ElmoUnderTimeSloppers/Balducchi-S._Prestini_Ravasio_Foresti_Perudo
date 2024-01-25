@@ -53,8 +53,10 @@ public class Client {
                     message = in.readUTF();
                     if(!message.equals("ping"))
                         System.out.println(message);
-                    else
+                    else{
                         out.writeUTF("pong");
+                    }
+
                 }
 
             }

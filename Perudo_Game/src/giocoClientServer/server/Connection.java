@@ -64,7 +64,7 @@ public class Connection implements Runnable{
                             message = receiveFromClient();      // receive the lobby ID from the client
                             for(Game g : gameList){
                                 if(g.ID.equals(message) && !g.hasStarted && g.playerList.size()<g.maxPlayer){   // if a lobby with that ID exist then it connect to it
-                                    g.addPlayer(new Player(username, g.startingDice, g.maxDiceValue, this, g));
+                                    g.addPlayer(new Player(username, g.startingDice, g.maxDieValue, this, g));
                                     c = true;
                                 }
 
@@ -82,7 +82,7 @@ public class Connection implements Runnable{
                     String decision = "";
                     int maxPlayer = -1;     // MAXIMUM AMOUNT OF PLAYER (MIN 2, MAX 6)
                     int minPlayer = -1;     // MINIMUM AMOUNT OF PLAYER TO START (MIN 2, MAX maxPlayer)
-                    int maxDiceValue = -1;  // MAXIMUM VALUE OF THE DICE (MIN 2, MAX 20)
+                    int maxDieValue = -1;  // MAXIMUM VALUE OF THE DIE (MIN 2, MAX 20)
                     int startingDice = -1;  // THE NUMBER OF STARTING DICE (MIN 1, MAX 10)
                     do{
                         try{
@@ -103,7 +103,7 @@ public class Connection implements Runnable{
                                 }
                             }
                             // MAX PLAYER
-                            if(maxPlayer<1){
+                            if(maxPlayer<1 && c){
                                 sendToClient("Insert the game maximum number of player (max = 6)");
                                 maxPlayer = Integer.parseInt(receiveFromClient());
                                 if(maxPlayer>6 || maxPlayer<2){
@@ -123,12 +123,12 @@ public class Connection implements Runnable{
                                 }
                             }
                             // MAX DICE VALUE
-                            if((maxDiceValue<1) && c){
+                            if((maxDieValue<1) && c){
                                 sendToClient("Insert the dice max value (max = 20)");
-                                maxDiceValue = Integer.parseInt(receiveFromClient());
-                                if(maxDiceValue>20 || maxDiceValue<=1){
+                                maxDieValue = Integer.parseInt(receiveFromClient());
+                                if(maxDieValue>20 || maxDieValue<=1){
                                     sendToClient("Error repeat");
-                                    maxDiceValue = -1;
+                                    maxDieValue = -1;
                                     c = false;
                                 }
                             }
@@ -147,7 +147,7 @@ public class Connection implements Runnable{
                             c = false;
                         }
                     } while(!c);
-                    gameList.add(new Game(maxPlayer, minPlayer, maxDiceValue, startingDice, this, isPublic)); // Create a new game with this option
+                    gameList.add(new Game(maxPlayer, minPlayer, maxDieValue, startingDice, this, isPublic)); // Create a new game with this option
                 }
                 else{
                     c = false;
