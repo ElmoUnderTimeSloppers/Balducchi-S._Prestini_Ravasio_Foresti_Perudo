@@ -231,6 +231,10 @@ public class Connection implements Runnable{
         gameList.remove(g);
     }
 
+    /**
+     * sends a ping to the client
+     * @throws IOException can happen
+     */
     public void ping() throws IOException {
         sendToClient("ping");
     }
