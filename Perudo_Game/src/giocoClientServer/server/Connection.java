@@ -48,7 +48,10 @@ public class Connection implements Runnable{
             //
             do{
                 // Here the client will say if he wants to join or create a lobby
-                sendToClient("Do you want to join or create a game? \n" + "1. join\n" + "2. create");
+                sendToClient("""
+                        Do you want to join or create a game?\s
+                        1. join
+                        2. create""");
                 message = receiveFromClient();
                 //  Option 1: Joining an existing lobby
                 if(message.equals("1")){
@@ -89,7 +92,10 @@ public class Connection implements Runnable{
                             c = true;
                             // PUBLIC OR PRIVATE
                             if(!decision.equals("1") && !decision.equals("2")){
-                                sendToClient("Do you want the lobby to be private or public\n" + "1. Public\n" + "2. Private");
+                                sendToClient("""
+                                        Do you want the lobby to be private or public
+                                        1. Public
+                                        2. Private""");
                                 decision = receiveFromClient();
                                 if(decision.equals("1")){
                                     isPublic = true;

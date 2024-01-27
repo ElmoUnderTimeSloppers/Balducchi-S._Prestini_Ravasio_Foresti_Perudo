@@ -72,7 +72,7 @@ public class Client {
      * @throws IOException  Throws IOException because of the stream
      */
     public static void main(String[] args) throws IOException {
-        Client c = new Client(new Socket("localhost", 1234));
+        Client c = new Client(new Socket("localhost", 12345));
         c.receiveMessage();
         c.sendMessage();
     }

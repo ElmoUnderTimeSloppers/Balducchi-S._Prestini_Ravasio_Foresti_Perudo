@@ -13,7 +13,7 @@ public class Game implements Runnable{
     int index = 0;                      // the index for the turn
     public boolean isPublic;            // says if the game is public
     public boolean hasStarted = false;  // says if the game has started
-    private LinkedList<Integer> results = new LinkedList<>();   // list of results
+    private final LinkedList<Integer> results = new LinkedList<>();   // list of results
     public int maxPlayer;               // maximum number of player
     public int minPlayer;               // minimum number of player
     public int maxDieValue;            // max value of the die
@@ -21,6 +21,7 @@ public class Game implements Runnable{
     public String ID;                   // game ID
     boolean calza = false;
     private Player calzaPlayer;
+    private boolean canCalza = true;
     LinkedList<Player> playerList = new LinkedList<>();         // list of player
 
     public Game(int maxPlayer, int minPlayer, int maxDieValue, int startingDie, Connection host, boolean isPublic) throws IOException {
@@ -244,6 +245,7 @@ public class Game implements Runnable{
      * @throws IOException can happen
      */
     private void startNewTurn() throws IOException, InterruptedException {
+        canCalza = true;
         calza = false;
         calzaPlayer = null;
         String tempMessage;         // used as a temporary string to get the message from the client
@@ -269,7 +271,10 @@ public class Game implements Runnable{
                 //
                 // turn that isn't the first
                 //
-                tempPlayer.myConnection.sendToClient("do you think the statement is correct?\n" + "1. Yes, it's correct\n" + "2. Dudo, it's not correct");
+                tempPlayer.myConnection.sendToClient("""
+                        do you think the statement is correct?
+                        1. Yes, it's correct
+                        2. Dudo, it's not correct""");
                 do{
                     c = true;
                     dudoOrNot = tempPlayer.myConnection.receiveFromClient();
@@ -278,10 +283,11 @@ public class Game implements Runnable{
                         break;
                     }
                     else if(dudoOrNot.equals("2")){      // the player checks for dudo
-                        dudo(tempPlayer, previousPlayer);
                         resetCalza();
+                        dudo(tempPlayer, previousPlayer);
                     }
                     else if(dudoOrNot.equals("1")){     // the player doesn't check for dudo
+                        resetCalza();
                         do{
                             c = true;
                             tempPlayer.myConnection.sendToClient("Ok, select if you want to increase the value or the number of the Dice \n" + "1. The value " + "(" + getValueCorrect(valueOfDice) + ")" + "\n" + "2. The number " + "(" + numberOfDice + ")");
@@ -298,7 +304,6 @@ public class Game implements Runnable{
                                 tempPlayer.myConnection.sendToClient("Please insert a valid option");
                             }
                         } while(!c);
-                        resetCalza();
                     }
                     else if(dudoOrNot.equals("pong")){
                         tempPlayer.stopReceiving();
@@ -310,7 +315,6 @@ public class Game implements Runnable{
                         tempPlayer.myConnection.sendToClient("Please insert a valid option");
                     }
                 } while(!c);
-                previousPlayer.startReceiving();
             }
             else{
                 //
@@ -328,9 +332,9 @@ public class Game implements Runnable{
 
             }
             if(!tempPlayer.isEliminated && (valueOfDice > 0 && numberOfDice > 0) && !calza)
-                broadcast(tempPlayer.username + " claims that there are at least " + numberOfDice + " with the value " + getValueCorrect(valueOfDice));
+                broadcast(tempPlayer.username + " claims that there are at least " + numberOfDice + " dice with the value " + getValueCorrect(valueOfDice));
 
-
+            tempPlayer.startReceiving();
             incrementIndex();
         } catch (SocketException e){
             // catch disconnection
@@ -491,9 +495,17 @@ public class Game implements Runnable{
      * When someone calls calza
      * @param calzaPlayer the player who called calza
      */
-    public void callCalza(Player calzaPlayer){
-        calza = true;
-        this.calzaPlayer = calzaPlayer;
+    public void callCalza(Player calzaPlayer) throws IOException {
+        if(!calzaPlayer.isEliminated && !calzaPlayer.equals(getPrevious()) && canCalza){
+            calza = true;
+            this.calzaPlayer = calzaPlayer;
+            calzaPlayer.myConnection.sendToClient("You used Calza, wait for the player to make a move");
+        }
+        else if(!canCalza)
+            calzaPlayer.myConnection.sendToClient("To late, the player already made a move");
+        else{
+            calzaPlayer.myConnection.sendToClient("You can't Calza");
+        }
     }
 
     /**
@@ -502,6 +514,7 @@ public class Game implements Runnable{
     public void resetCalza(){
         calza = false;
         this.calzaPlayer = null;
+        canCalza = false;
     }
 
     /**
@@ -522,7 +535,11 @@ public class Game implements Runnable{
         reStart();
     }
 
-
+    /**
+     * waits for some milliseconds
+     * @param milliseconds how much to wait
+     * @throws InterruptedException can happen
+     */
     public void startWaiting(int milliseconds) throws InterruptedException {
         synchronized (this){
             this.wait(milliseconds);

@@ -46,7 +46,7 @@ public class Player implements Runnable{
     @Override
     public void run() {     // start receiving message from client
         try{
-            String message = "";
+            String message;
             while(myConnection.client.isConnected()){
                 message = myConnection.receiveFromClient();
                 if(message.equals("calza") || message.equals("ng \u0001")){                                        //if someone calls calza then the server stop the current player
@@ -61,19 +61,23 @@ public class Player implements Runnable{
             }
         }
         catch (IOException e){
-            try {
-                this.gameConnectedTo.removePlayer(this);
-            } catch (IOException ex) {
-                throw new RuntimeException(ex);
-            }
+            System.out.println("A player disconnected");
         }
     }
 
+    /**
+     * Start receiving from the client
+     */
     public void startReceiving(){
         c = true;
         Thread receiveMessage = new Thread(this);
         receiveMessage.start();
     }
+
+    /**
+     * Stops receiving from the client
+     * @throws IOException can happen
+     */
     public void stopReceiving() throws IOException {
         myConnection.ping();
     }

@@ -1,0 +1,8 @@
+<component name="ArtifactManager">
+  <artifact type="jar" build-on-make="true" name="Perudo_Game:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/Perudo_Game_jar</output-path>
+    <root id="archive" name="Perudo_Game.jar">
+      <element id="module-output" name="Perudo_Game" />
+    </root>
+  </artifact>
+</component>

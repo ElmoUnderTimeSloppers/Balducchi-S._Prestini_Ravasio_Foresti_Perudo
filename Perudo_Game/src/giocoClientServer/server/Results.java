@@ -25,13 +25,13 @@ public class Results {
 
     @Override
     public String toString() {
-        String s = "";
+        StringBuilder s = new StringBuilder();
         for(int r : results){
             if(r != 1)  // if the value is 1 it should print j representing the jolly
-                s += "| " + r + " | ";
+                s.append("| ").append(r).append(" | ");
             else
-                s += "| J | ";
+                s.append("| J | ");
         }
-        return s;
+        return s.toString();
     }
 }
