@@ -38,7 +38,7 @@ public class Client {
             }
         }
         catch (IOException e){
-            System.out.println("Error");
+            System.out.println("You have been disconnected");
         }
     }
 
@@ -61,7 +61,7 @@ public class Client {
 
             }
             catch (IOException e){
-                System.out.println("Error");
+                System.out.println("You have been disconnected");
             }
         }).start();
     }

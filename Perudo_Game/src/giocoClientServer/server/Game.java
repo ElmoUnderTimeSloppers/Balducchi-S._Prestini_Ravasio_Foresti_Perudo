@@ -19,9 +19,9 @@ public class Game implements Runnable{
     public int maxDieValue;            // max value of the die
     public int startingDice;            // number of starting die
     public String ID;                   // game ID
-    boolean calza = false;
-    private Player calzaPlayer;
-    private boolean canCalza = true;
+    boolean calza = false;              // if calza is called
+    private Player calzaPlayer;         // the player who called calza
+    private boolean canCalza = true;    // if you can call calza
     LinkedList<Player> playerList = new LinkedList<>();         // list of player
 
     public Game(int maxPlayer, int minPlayer, int maxDieValue, int startingDie, Connection host, boolean isPublic) throws IOException {
@@ -94,16 +94,11 @@ public class Game implements Runnable{
         //
         //  THE END CHECKS FOR THE WINNING PLAYER
         //
-        for(Player p : playerList)
-        {
-            if(!p.isEliminated) {
-                try {
-                    broadcast("the player " + p.username + " is the winner");
-                } catch (IOException e) {
-                    throw new RuntimeException(e);
-                }
-                break;
-            }
+        try {
+            broadcast(getWinner().username + " has won the game");
+            disconnectAll();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -499,7 +494,8 @@ public class Game implements Runnable{
         if(!calzaPlayer.isEliminated && !calzaPlayer.equals(getPrevious()) && canCalza){
             calza = true;
             this.calzaPlayer = calzaPlayer;
-            calzaPlayer.myConnection.sendToClient("You used Calza, wait for the player to make a move");
+            calzaPlayer.myConnection.sendToClient("You used Calza");
+            playerList.get(index).myConnection.ping();
         }
         else if(!canCalza)
             calzaPlayer.myConnection.sendToClient("To late, the player already made a move");
@@ -544,5 +540,32 @@ public class Game implements Runnable{
         synchronized (this){
             this.wait(milliseconds);
         }
+    }
+
+    /**
+     * Get the winner
+     * @return the winning player
+     */
+    public Player getWinner(){
+        for(Player p : playerList)
+        {
+            if(!p.isEliminated) {
+                return p;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * disconnect all client and removes the game
+     * @throws IOException can happen
+     */
+    public void disconnectAll() throws IOException {
+        for(Player p : playerList)
+        {
+            p.stopReceiving();
+            p.myConnection.disconnect();
+        }
+        Connection.removeGame(this);
     }
 }

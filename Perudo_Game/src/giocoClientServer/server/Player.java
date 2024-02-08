@@ -54,10 +54,9 @@ public class Player implements Runnable{
                 }
                 else if(message.equals("pong")){
                     c = false;
-                    System.out.println("STOPPED RECEIVING");
                     break;
                 }
-                System.out.println(message);
+                System.out.println(username + ": " + message);
             }
         }
         catch (IOException e){
