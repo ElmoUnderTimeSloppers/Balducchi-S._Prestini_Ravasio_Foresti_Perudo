@@ -6,8 +6,6 @@ import java.util.LinkedList;
 import java.util.Random;
 
 public class Game implements Runnable{
-
-    int numberOfRestingPlayer = 0;      // Number of player which hasn't been eliminated
     int numberOfDice = -1;              // number of die for the statement
     int valueOfDice = -1;               // value of die for the statement
     int index = 0;                      // the index for the turn
@@ -76,7 +74,6 @@ public class Game implements Runnable{
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        numberOfRestingPlayer = playerList.size();
         // START
 
         for(Player p : playerList){
@@ -90,7 +87,7 @@ public class Game implements Runnable{
             catch (IOException | InterruptedException e){
                 System.out.println("error");
             }
-        } while(numberOfRestingPlayer > 1 && playerList.size() > 1);    // if the number of player is one then it finishes
+        } while(getNumberOfRestingPlayer() > 1 && playerList.size() > 1);    // if the number of player is one then it finishes
         //
         //  THE END CHECKS FOR THE WINNING PLAYER
         //
@@ -344,6 +341,7 @@ public class Game implements Runnable{
      */
     public void removePlayer(Player p) throws IOException {
         playerList.remove(p);
+        p.isEliminated = true;
         p.myConnection.disconnect();
         broadcast(p.username + " has disconnected");
         System.out.println(p.username + " has disconnected");
@@ -471,7 +469,6 @@ public class Game implements Runnable{
         tempPlayer.numberOfDice--;
         if(tempPlayer.numberOfDice<1){ // checks if eliminated
             broadcast(tempPlayer.username + " has finished his dice, he is eliminated");
-            numberOfRestingPlayer--;
             tempPlayer.isEliminated = true;
         }
     }
@@ -491,14 +488,14 @@ public class Game implements Runnable{
      * @param calzaPlayer the player who called calza
      */
     public void callCalza(Player calzaPlayer) throws IOException {
-        if(!calzaPlayer.isEliminated && !calzaPlayer.equals(getPrevious()) && canCalza){
+        if(!calzaPlayer.isEliminated && !calzaPlayer.equals(getPrevious()) && canCalza && (valueOfDice > 0 && numberOfDice > 0)){
             calza = true;
             this.calzaPlayer = calzaPlayer;
             calzaPlayer.myConnection.sendToClient("You used Calza");
             playerList.get(index).myConnection.ping();
         }
         else if(!canCalza)
-            calzaPlayer.myConnection.sendToClient("To late, the player already made a move");
+            calzaPlayer.myConnection.sendToClient("Too late, the player already made a move");
         else{
             calzaPlayer.myConnection.sendToClient("You can't Calza");
         }
@@ -567,5 +564,13 @@ public class Game implements Runnable{
             p.myConnection.disconnect();
         }
         Connection.removeGame(this);
+    }
+    public int getNumberOfRestingPlayer(){
+        int c = 0;
+        for(Player p : playerList){
+            if(!p.isEliminated)
+                c++;
+        }
+        return c;
     }
 }

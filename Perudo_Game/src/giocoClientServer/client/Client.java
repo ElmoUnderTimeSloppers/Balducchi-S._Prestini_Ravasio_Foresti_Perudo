@@ -62,6 +62,12 @@ public class Client {
             }
             catch (IOException e){
                 System.out.println("You have been disconnected");
+                try {
+                    out.close();
+                    in.close();
+                } catch (IOException ex) {
+                    throw new RuntimeException(ex);
+                }
             }
         }).start();
     }

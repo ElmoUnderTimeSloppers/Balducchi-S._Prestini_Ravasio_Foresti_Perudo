@@ -11,8 +11,8 @@ public class Connection implements Runnable{
     public static LinkedList<Connection> clientList = new LinkedList<>();       // A list of all the connection in the server
     public static LinkedList<Game> gameList = new LinkedList<>();               // A list of all the game that are being played     // What game this client is going to play in
     public Socket client;                                                       // the socket of the client
-    private DataOutputStream out;                                               // Used to send out messages to the client
-    private DataInputStream in;                                                 // Used to receive the messages from the client
+    private final DataOutputStream out;                                               // Used to send out messages to the client
+    private final DataInputStream in;                                                 // Used to receive the messages from the client
     public String username = "";                                                // the username
 
     public Connection(Socket client) throws IOException {
@@ -198,9 +198,8 @@ public class Connection implements Runnable{
             clientList.remove(this);
             System.out.println(this.username + " has disconnected");
             client.close();
-            this.out = null;
-            this.in = null;
-            this.client = null;
+            this.out.close();
+            this.in.close();
             this.username = null;
         } catch (Exception e){
             System.out.println("error");
