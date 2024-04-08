@@ -1,4 +1,6 @@
-package giocoClientServer.server;
+package giocoClientServer.game;
+
+import giocoClientServer.server.Connection;
 
 import java.io.IOException;
 import java.net.SocketException;
@@ -20,7 +22,7 @@ public class Game implements Runnable{
     boolean calza = false;              // if calza is called
     private Player calzaPlayer;         // the player who called calza
     private boolean canCalza = true;    // if you can call calza
-    LinkedList<Player> playerList = new LinkedList<>();         // list of player
+    public LinkedList<Player> playerList = new LinkedList<>();         // list of player
 
     public Game(int maxPlayer, int minPlayer, int maxDieValue, int startingDie, Connection host, boolean isPublic) throws IOException {
         this.maxPlayer = maxPlayer;         //set the max of player in the lobby

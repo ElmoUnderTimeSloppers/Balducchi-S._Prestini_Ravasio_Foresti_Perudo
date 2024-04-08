@@ -1,4 +1,4 @@
-package giocoClientServer.server;
+package giocoClientServer.game;
 
 import java.util.LinkedList;
 

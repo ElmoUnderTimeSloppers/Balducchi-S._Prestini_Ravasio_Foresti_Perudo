@@ -1,4 +1,6 @@
-package giocoClientServer.server;
+package giocoClientServer.game;
+
+import giocoClientServer.server.Connection;
 
 import java.io.IOException;
 
@@ -19,7 +21,7 @@ public class Player implements Runnable{
      * @param myConnection the connection
      * @throws IOException can happen
      */
-    Player(String username, int nDice, int maxDieValue, Connection myConnection, Game gameConnectedTo) throws IOException {
+    public Player(String username, int nDice, int maxDieValue, Connection myConnection, Game gameConnectedTo) throws IOException {
         results = new Results(maxDieValue);
         this.username = username;
         this.numberOfDice = nDice;

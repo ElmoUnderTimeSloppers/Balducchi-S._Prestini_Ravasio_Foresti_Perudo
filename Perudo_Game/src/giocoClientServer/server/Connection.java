@@ -1,5 +1,8 @@
 package giocoClientServer.server;
 
+import giocoClientServer.game.Game;
+import giocoClientServer.game.Player;
+
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
