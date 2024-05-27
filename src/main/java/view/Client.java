@@ -1,4 +1,4 @@
-package giocoClientServer.client;
+package view;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

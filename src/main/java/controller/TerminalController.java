@@ -1,4 +1,4 @@
-package giocoClientServer.server;
+package controller;
 
 import org.springframework.web.bind.annotation.*;
 

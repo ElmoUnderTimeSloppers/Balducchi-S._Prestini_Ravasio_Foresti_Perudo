@@ -1,6 +1,6 @@
-package giocoClientServer.game;
+package model;
 
-import giocoClientServer.server.Connection;
+import controller.Connection;
 
 import java.io.IOException;
 import java.net.SocketException;

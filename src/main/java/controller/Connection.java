@@ -1,7 +1,7 @@
-package giocoClientServer.server;
+package controller;
 
-import giocoClientServer.game.Game;
-import giocoClientServer.game.Player;
+import model.Game;
+import model.Player;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;

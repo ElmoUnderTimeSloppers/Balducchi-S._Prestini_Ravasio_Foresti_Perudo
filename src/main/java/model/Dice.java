@@ -1,4 +1,4 @@
-package giocoClientServer.game;
+package model;
 
 import java.util.Random;
 
